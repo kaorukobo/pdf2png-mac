@@ -22,7 +22,9 @@ int main( int argc, char* argv[] )
 	NSMutableArray* args = [NSMutableArray arrayWithCapacity: argc - 1];
 	for ( int i = 1; i < argc; ++ i )
 	{
-		[args addObject: [NSString stringWithCString: argv[i]] ];
+		// 2006/08/28 21:18  use stringWithUTF8String
+		// [args addObject: [NSString stringWithCString: argv[i]] ];
+		[args addObject: [NSString stringWithUTF8String: argv[i]] ];
 	}
 	
 	// If we have a "--dpi" along with a corresponding argument ...
