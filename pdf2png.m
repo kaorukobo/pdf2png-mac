@@ -46,12 +46,21 @@ int main( int argc, char* argv[] )
 		[args removeObjectAtIndex: index + 1];
 		[args removeObjectAtIndex: index];
 	}
+
+	// --transparent    Do not fill background white color, keep transparency from PDF.
+  BOOL keepTransparent = NO;
+	if ( (index = [args indexOfObject: @"--transparent"]) != NSNotFound )
+	{
+		keepTransparent = YES;
+		[args removeObjectAtIndex: index];
+	}
 	
 	if ( [args count] != 1 || [args indexOfObject: @"--help"] != NSNotFound || desiredResolution <= 0 || page <= 0 )
 	{
 		fprintf( stderr, "pdf2png [options] file\n" );
 		fprintf( stderr, "\t--dpi dpi\tSpecifies the resolution at which to export the pages\n" );
 		fprintf( stderr, "\t--page page\tSingle page to export\n" );
+		fprintf( stderr, "\t--transparent\tDo not fill background white color, keep transparency from PDF.\n" );
 		fprintf( stderr, "\t--help\tPrint this help message\n" );
 		return 1;
 	}
@@ -92,38 +101,48 @@ int main( int argc, char* argv[] )
 		}
 	}
 	
-	NSSize sourceSize = [source size];
-	
-	// When loading a PDF document, it reports size in typographic dots. There are 72 dots per inch.
-	// See http://www.macosxguru.net/article.php?story=20031209091834195
-	// When converting, we need to scale the PDF by this factor
-	double sourceResolution = 72.0;
-	int pixels = [ [source bestRepresentationForDevice: nil] pixelsWide];
-	if ( pixels != 0 ) sourceResolution = ((double)pixels / sourceSize.width) * 72.0;
-	double scaleFactor = desiredResolution / sourceResolution; 
-	
-	NSSize size = NSMakeSize( sourceSize.width * scaleFactor, sourceSize.height * scaleFactor );
-	
 
-	[NSApplication sharedApplication];
-	[[NSGraphicsContext currentContext] setImageInterpolation: NSImageInterpolationHigh];
-
-	[source setSize: size];
-	NSRect destinationRect = NSMakeRect( 0, 0, size.width, size.height );
+    [NSApplication sharedApplication];
+    [[NSGraphicsContext currentContext] setImageInterpolation: NSImageInterpolationHigh];
 	
-	NSImage* image = [[NSImage alloc] initWithSize:size];
-	[image lockFocus];
-	[[NSColor whiteColor] set]; // We fill the rect with white, with full opacity, later on
 	
 	do
 	{
 		// Set up a temporary release pool so memory will get cleaned up properly
 		NSAutoreleasePool *loopPool = [[NSAutoreleasePool alloc] init];
-		
-		NSRectFillUsingOperation( destinationRect, NSCompositeClear );
-		[source drawInRect: destinationRect
-			fromRect: destinationRect
-			operation: NSCompositeCopy fraction: 1.0];
+
+
+    NSSize sourceSize = [pdfSource size];
+	
+    // When loading a PDF document, it reports size in typographic dots. There are 72 dots per inch.
+    // See http://www.macosxguru.net/article.php?story=20031209091834195
+    // When converting, we need to scale the PDF by this factor
+    double sourceResolution = 72.0;
+    // int pixels = [ [source bestRepresentationForDevice: nil] pixelsWide];
+    // if ( pixels != 0 ) sourceResolution = ((double)pixels / sourceSize.width) * 72.0;
+    double scaleFactor = desiredResolution / sourceResolution; 
+	
+    NSSize size = NSMakeSize( sourceSize.width * scaleFactor, sourceSize.height * scaleFactor );
+
+    //	[source setSize: size];
+		NSRect sourceRect = NSMakeRect( 0, 0, sourceSize.width, sourceSize.height );
+    NSRect destinationRect = NSMakeRect( 0, 0, size.width, size.height );
+	
+    NSImage* image = [[NSImage alloc] initWithSize:size];
+    [image lockFocus];
+
+
+		if (keepTransparent) {
+			[pdfSource drawInRect: destinationRect
+							fromRect: sourceRect
+						operation: NSCompositeCopy fraction: 1.0 respectFlipped: NO hints: [NSDictionary dictionary] ];
+		} else {
+			[[NSColor whiteColor] set];
+			NSRectFill( destinationRect );
+			[pdfSource drawInRect: destinationRect
+							fromRect: sourceRect
+							operation: NSCompositeSourceOver fraction: 1.0 respectFlipped: NO hints: [NSDictionary dictionary] ];
+		}
 		
 		NSBitmapImageRep* bitmap = [ [NSBitmapImageRep alloc]
 			initWithFocusedViewRect: destinationRect ];
@@ -151,11 +170,11 @@ int main( int argc, char* argv[] )
 			}
 		}
 		
+    [image unlockFocus];
+    [image release];
 		[loopPool release];
 	}
 	while ( morePages == YES );
 	
-	[image unlockFocus];
-	[image release];
 	[pool release];
 }
