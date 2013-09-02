@@ -28,7 +28,7 @@ int main( int argc, char* argv[] )
 	}
 	
 	// If we have a "--dpi" along with a corresponding argument ...
-	unsigned int index = NSNotFound;
+	NSUInteger index = NSNotFound;
 	if ( (index = [args indexOfObject: @"--dpi"]) != NSNotFound && index + 1 < [args count] )
 	{
 		// Parse it as an integer
