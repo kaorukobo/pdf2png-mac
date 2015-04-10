@@ -11,7 +11,7 @@
 
 int main( int argc, char* argv[] )
 {
-	int desiredResolution = 200; // in DPI
+	double desiredResolution = 200; // in DPI
 
 	BOOL morePages = YES;
 	int page = 1;
@@ -32,7 +32,7 @@ int main( int argc, char* argv[] )
 	if ( (index = [args indexOfObject: @"--dpi"]) != NSNotFound && index + 1 < [args count] )
 	{
 		// Parse it as an integer
-		desiredResolution = [[args objectAtIndex: index + 1] intValue];
+		desiredResolution = [[args objectAtIndex: index + 1] doubleValue];
 		[args removeObjectAtIndex: index + 1];
 		[args removeObjectAtIndex: index];
 	}
