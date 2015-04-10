@@ -55,12 +55,23 @@ int main( int argc, char* argv[] )
 		[args removeObjectAtIndex: index];
 	}
 	
-	if ( [args count] != 1 || [args indexOfObject: @"--help"] != NSNotFound || desiredResolution <= 0 || page <= 0 )
+    // If we have a "--output" along with a corresponding argument ...
+    NSString *explicitOutputFilePath;
+    if ( (index = [args indexOfObject: @"--output"]) != NSNotFound && index + 1 < [args count] )
+    {
+        explicitOutputFilePath = [args objectAtIndex: index + 1];
+        morePages = NO; // only output single page
+        [args removeObjectAtIndex: index + 1];
+        [args removeObjectAtIndex: index];
+    }
+
+    if ( [args count] != 1 || [args indexOfObject: @"--help"] != NSNotFound || desiredResolution <= 0 || page <= 0 )
 	{
 		fprintf( stderr, "pdf2png [options] file\n" );
 		fprintf( stderr, "\t--dpi dpi\tSpecifies the resolution at which to export the pages\n" );
 		fprintf( stderr, "\t--page page\tSingle page to export\n" );
 		fprintf( stderr, "\t--transparent\tDo not fill background white color, keep transparency from PDF.\n" );
+        fprintf( stderr, "\t--output\tSpecify output file path. This implies --page 1 if not specified. ( Without this option, PDFNAME-p1.png (example) is created on same directory )\n" );
 		fprintf( stderr, "\t--help\tPrint this help message\n" );
 		return 1;
 	}
@@ -96,7 +107,7 @@ int main( int argc, char* argv[] )
 			[pdfSource setCurrentPage: page-1];
 			
 			// Set the output format to have the correct number of leading zeros
-			unsigned int numDigits = [(NSString*) [NSString stringWithFormat: @"%d", [pdfSource pageCount]] length];
+			unsigned int numDigits = [(NSString*) [NSString stringWithFormat: @"%ld", (long)[pdfSource pageCount]] length];
 			outputFileFormat = [NSString stringWithFormat: @"%%@-p%%0%dd", numDigits];
 		}
 	}
@@ -149,9 +160,16 @@ int main( int argc, char* argv[] )
 		
 		NSData* data = [bitmap representationUsingType:NSPNGFileType properties:nil];
 		[bitmap release];
+        
+        NSString *outputFilePath = NULL;
+        if (explicitOutputFilePath == NULL) {
+            outputFilePath = [ [NSString stringWithFormat: outputFileFormat, [sourcePath stringByDeletingPathExtension], page] stringByAppendingPathExtension: @"png"];
+        } else {
+            outputFilePath = explicitOutputFilePath;
+        }
 		
 		[[NSFileManager defaultManager]
-			createFileAtPath: [ [NSString stringWithFormat: outputFileFormat, [sourcePath stringByDeletingPathExtension], page] stringByAppendingPathExtension: @"png"]
+			createFileAtPath: outputFilePath
 			contents: data
 			attributes: nil ];
 		
