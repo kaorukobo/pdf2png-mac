@@ -1,5 +1,24 @@
-*.mode1v3
+# Generic .gitignore for Xcode project
+build/
 *.pbxuser
-*.pch
-/build
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+*.swp
+!.gitkeep
+.DS_Store
 
+# pdf2png specific
+!*.m
+/pdf2png*
