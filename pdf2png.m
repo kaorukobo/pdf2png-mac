@@ -7,6 +7,7 @@
 //
 // Released under the "do whatever you want" public domain licence.
 
+#include <objc/objc.h>
 #include <Cocoa/Cocoa.h>
 
 int main( int argc, char* argv[] )
